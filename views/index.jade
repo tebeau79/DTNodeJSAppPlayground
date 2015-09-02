@@ -1,0 +1,186 @@
+html
+	head
+		title!= title
+
+		meta(name='viewport', content='width=device-width, initial-scale=1.0')
+
+		script(src='https://code.jquery.com/jquery-1.10.2.js')
+		link(href='stylesheets/bootstrap.css', rel='stylesheet', media='screen')
+		link(href='../public/css/index.css', rel='stylesheet', media='screen')
+		link(href='../node_modules/bootstrap/dist/css/bootstrap.min.css', rel='stylesheet')
+
+	body
+		h1!= message
+
+		script(src='//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js', async=true)
+
+		div#adminEntryContainer
+			button#adminEntry(
+				class='adminEntry'
+				onclick='adminLogin()')
+			br
+			div#adminMenu
+				label Admin Menu
+				button#addQuestion(
+					type='submit'
+					onclick='addSurveyQuestion()') Add Survey Question
+				br
+				button#viewResults(
+					type='submit'
+					onclick='viewSurveyResults()') View Survey Results
+
+		div#addSurveyQuestion.container
+			h3 Create Survey
+			label#addSurveyQuestionValidationMessage.validationMessage
+			form(action="/addSurveyQuestion", method="post", id="surveyForm")
+				span.label Key in a question
+				br
+				input#newSurveyQuestion(type="text", name="newSurveyQuestion" maxLength="100" size="30")
+				br
+				br
+				span.label Add up to 4 answers
+				br
+				input#newSurveyAnswer1(type="text", name="newSurveyAnswer1" maxLength="100" size="30")
+				br
+				input#newSurveyAnswer2(type="text", name="newSurveyAnswer2" maxLength="100" size="30")
+				br
+				input#newSurveyAnswer3(type="text", name="newSurveyAnswer3" maxLength="100" size="30")
+				br
+				input#newSurveyAnswer4(type="text", name="newSurveyAnswer4" maxLength="100" size="30")
+				br
+				br
+
+				button#submitSurveyQuestion.button(name="submitSurveyQuestion" type="submit") ADD SURVEY QUESTION
+			button#cancelAddSurvey.button(onclick='displayAdminMenu()') CANCEL		
+
+		div#adminSurveyResults.adminContainer.container
+			h3 Survey Results
+			table#surveyResults
+			br
+
+			button#backToAdminWindow.button(onclick='displayAdminMenu()') BACK TO ADMIN MENU		
+
+		div#surveyQuestion.container.popover
+			label#submitSurveyValidationMessage.validationMessage
+			form(action="/recordUserSelection", method="post", id="surveyForm")
+				span.label#questionKey
+				label#surveyQuestionId Hidden element storing survey question id
+
+				div#surveyAnswers
+
+				button#submitSurvey.button(name="submitSurvey" type="submit") SUBMIT
+
+script.
+	$(document).ready(function() {
+		$.ajax({
+			url: "/considerPresentingSurveyQuestion",
+			datatype: "json"
+		})
+		.done(function(data) {
+			$('#questionKey').html(data.questionKey);
+			$('#surveyQuestionId').html(data.questionIdKey);
+			var radioContainer = $('#surveyAnswers');
+			$.each(data.answerList, function (i, item) {
+				radioContainer.append('<br /><input type="radio" id="surveyAnswers" name="surveyAnswers" value="' + item.answer_id + '">' + item.answer + '<br />');
+			});
+
+			$('#surveyQuestion').show();
+		});
+	});
+
+script.
+	$("#submitSurvey").click(function(event){
+		event.preventDefault();
+
+		$('#submitSurveyValidationMessage').hide();
+
+		var qKey = $('#surveyQuestionId').text();
+		var aId = $("input[type='radio'][name='surveyAnswers']:checked").val();
+
+		var jsonData = { questionId: qKey, answerId: aId };
+
+		if (aId) {
+			$.ajax({
+				type: "POST",
+				url: "/recordUserSelection",
+				data: jsonData,
+				dataType: "json"
+			})
+			.done(function(data) {
+				$('#surveyQuestion').hide();
+			});
+		} else {
+			$('#submitSurveyValidationMessage').html('Please make a selection.');
+			$('#submitSurveyValidationMessage').show();
+		}
+	});
+
+script.
+	function adminLogin(){
+		$('#adminMenu').show();
+	}
+
+script.
+	function addSurveyQuestion(){
+		$('#adminMenu').hide();
+		$('#newSurveyQuestion').val("");
+		$('#newSurveyAnswer1').val("");
+		$('#newSurveyAnswer2').val("");
+		$('#newSurveyAnswer3').val("");
+		$('#newSurveyAnswer4').val("");
+		$('#addSurveyQuestion').show();
+	}
+
+script.
+	$("#submitSurveyQuestion").click(function(event){
+		event.preventDefault();
+
+		$('#addSurveyQuestionValidationMessage').hide();
+
+		var question = $('#newSurveyQuestion').val();
+		var answer1 = $('#newSurveyAnswer1').val();
+		var answer2 = $('#newSurveyAnswer2').val();
+		var answer3 = $('#newSurveyAnswer3').val();
+		var answer4 = $('#newSurveyAnswer4').val();
+		var jsonData = { questionKey: question, answer1Key: answer1, answer2Key: answer2, answer3Key: answer3, answer4Key: answer4 };
+
+		if (question && answer1) {
+			$.ajax({
+				type: "POST",
+				url: "/addSurveyQuestion",
+				data: jsonData,
+				dataType: "json"
+			})
+			.done(function(data) {
+				displayAdminMenu();
+			});
+		} else {
+			$('#addSurveyQuestionValidationMessage').html('Please enter a question and at least one answer.');
+			$('#addSurveyQuestionValidationMessage').show();
+		}
+	});
+
+script.
+	function viewSurveyResults(){
+		$('#adminMenu').hide();
+
+		$.ajax({
+			url: "/retrieveSurveyResults",
+			datatype: "json"
+		})
+		.done(function(data) {
+			var trHTML = '';
+			$.each(data, function (i, item) {
+				trHTML += '<tr><td>' + item.question + '</td><td>' + item.answer + '</td><td>' + item.total + '</td></tr>';
+			});
+			$('#surveyResults').html(trHTML);
+			$('#adminSurveyResults').show();
+		});
+	}
+
+script.
+	function displayAdminMenu(){
+		$('#adminSurveyResults').hide();
+		$('#addSurveyQuestion').hide();
+		$('#adminMenu').show();
+	}
