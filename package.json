@@ -1,0 +1,22 @@
+{
+  "name": "myapp",
+  "version": "1.0.0",
+  "description": "sample app",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "Dan Tebeau",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.13.3",
+    "bootstrap": "^3.3.5",
+    "debug": "^2.2.0",
+    "express": "^4.13.3",
+    "finalhandler": "^0.4.0",
+    "jade": "^1.11.0",
+    "merge-descriptors": "^1.0.0",
+    "mysql": "^2.9.0",
+    "sequelize": "^3.6.0"
+  }
+}
